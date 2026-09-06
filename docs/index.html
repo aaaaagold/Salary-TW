@@ -294,6 +294,8 @@ const renderAllData_sortByCol_sort=(btn)=>{
 	let cmp3=(a,b)=>{
 		const valA=a._vals[idx];
 		const valB=b._vals[idx];
+		if(valA===undefined) return valB===undefined?0:1;
+		if(valB===undefined) return -1;
 		return coef*(valA===valB?0:valA<valB?-1:1);
 	};
 	if(type===Number){ cmp3=(a,b)=>{
