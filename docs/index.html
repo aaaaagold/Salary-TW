@@ -307,9 +307,11 @@ const renderAllData_sortByCol_sort=(btn)=>{
 	}; }
 	const trs=[...tbody.childNodes].sort(cmp3);
 	tbody.rf(0);
-	for(let x=0,xs=trs.length;x<xs;++x) tbody.ac(trs[x]);
+	for(let x=0,xs=trs.length;x<xs;++x){
+		tbody.ac(trs[x]);
+		trs[x]._ord.rf(0).atxt(x);
+	}
 	btn._ord.rf(0).atxt(o?"↓":"↑");
-	
 };
 const renderAllData_sortByCol=function(e){
 	if(lastBtn){
@@ -344,7 +346,10 @@ const renderAllData=window.renderAllData=(t)=>{
 		const h=tbl._head;
 		h.ac(h._tr=d.ce('tr'));
 		h._tr._tds=[];
-		tbl._headers=[];
+		tbl._headers=[
+			'order',
+		];
+		h._tr.ac(d.ce('td').ac(d.ce('div').atxt('order')));
 		for(let arr=dataKeys,x=0,xs=arr.length;x<xs;++x){
 			tbl._headers.push(arr[x]);
 			const txt=(arr[x] in headerDisplayMapping)?headerDisplayMapping[arr[x]].text:arr[x];
@@ -369,6 +374,7 @@ const renderAllData=window.renderAllData=(t)=>{
 	for(let i=0,arr=window.data.slice().sort(renderAllData_cmp3),sz=arr.length;i<sz;++i){
 		const tr=doc.ce('tr');
 		;
+		tr.ac(doc.ce('td').ac(tr._ord=doc.ce('div').atxt(i)));
 		const vals=tr._vals=[];
 		for(let data=arr[i],x=0,xs=dataKeys.length;x<xs;++x){
 			const key=dataKeys[x];
