@@ -291,7 +291,11 @@ const renderAllData_sortByCol_sort=(btn)=>{
 	const type=td._type;
 	const tbody=td._tbody;
 	const coef=(1-(o<<1));
-	let cmp3;
+	let cmp3=(a,b)=>{
+		const valA=a._vals[idx];
+		const valB=b._vals[idx];
+		return coef*(valA===valB?0:valA<valB?-1:1);
+	};
 	if(type===Number){ cmp3=(a,b)=>{
 		const valA=a._vals[idx]-0;
 		const valB=b._vals[idx]-0;
@@ -299,7 +303,7 @@ const renderAllData_sortByCol_sort=(btn)=>{
 		if(isNaN(valB)) return -1;
 		return coef*(valA-valB);
 	}; }
-	const trs=[...tbody.childNodes]; if(cmp3) trs.sort(cmp3);
+	const trs=[...tbody.childNodes].sort(cmp3);
 	tbody.rf(0);
 	for(let x=0,xs=trs.length;x<xs;++x) tbody.ac(trs[x]);
 	btn._ord.rf(0).atxt(o?"↓":"↑");
