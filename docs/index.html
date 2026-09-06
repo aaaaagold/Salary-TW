@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.border {
+ border: 1px solid black;
+}
+.hoverEffect:hover {
+ background-color:rgba(234,234,0,0.5);
+}
+.table-root {
+ border-spacing:0px;
+}
+.table-root div {
+ word-break: keep-all;
+ white-space: pre;
+ text-align: center;
+}
+.table-root td {
+ padding: 2px;
+ border: 1px solid black;
+}
+.table-header {
+ background-color:rgba(234,234,0,0.5);
+}
+.table-tbody {
+ //transform:scale(1,-1);
+}
+.table-tbody>* {
+ //transform:scale(1,-1);
+}
+.table-tbody td {
+ text-align:right;
+}
+</style>
+<script>
+"use strict";
+window.dataSrcs=(window.dataSrcs||[]).concat((()=>{
+	const rtv=[];
+	const t0=110;
+	const te=115;
+	for(let t=t0;t<te;++t){
+		rtv.push(
+			({
+				p:"t100sb15-"+t+"-上市.csv",
+				t:t,
+			}),
+			({
+				p:"t100sb15-"+t+"-上櫃.csv",
+				t:t,
+			}),
+		);
+	}
+	return rtv;
+})());
+const maxT=(()=>{
+	const arr=window.dataSrcs;
+	let t=arr[0].t;
+	for(let x=1,xs=arr.length;x<xs;++x) t=Math.max(t,arr[x].t);
+	return t;
+})();
+</script>
+</head>
+<body>
+<div id="root">
+<div id="pannel-root">
+<div><div>t <input id="input-t" type="number"></input></div>
+<div><button id="btn-refresh"> refresh </button></div>
+</div>
+<div id="data-root"><div> loading .. </div></div>
+</div>
+<script>
+"use strict";
+(()=>{
+
+
+const doc=document;
+
+{ const p=HTMLElement.prototype,d=doc;
+d.ce=d.createElement;
+d.ctxt=d.createTextNode;
+d.ge=d.getElementById;
+p.ac=function(c){ this.appendChild(c); return this; };
+p.atxt=function(t){ this.appendChild(d.ctxt(t)); return this; };
+p.rc=function(c){ this.removeChild(c); return this; }
+p.rf=function(i){
+	const arr=this.childNodes;
+	while(arr.length>i) this.rc(arr[arr.length-1]);
+	return this;
+};
+p.ra=function(a){ this.removeAttribute(a); return this; };
+p.ga=p.getAttribute;
+p.sa=function(a,v){ this.setAttribute(a,v); return this; };
+p.ae=function(t,f,o){ this.addEventListener.apply(this,arguments); return this; };
+p.re=function(t,f,o){ this.removeEventListener.apply(this,arguments); return this; };
+}
+
+window.jurl=(url, method, header, data, resType, callback, callback_all_h, callback_state4_all_t, callback_all_t, timeout_ms)=>{
+	const argv=[];
+	resType=resType||'';
+	let xhttp=new XMLHttpRequest();
+	if(0<timeout_ms) xhttp.timeout=timeout_ms;
+	xhttp.onreadystatechange=function(){
+		if((typeof callback_all_h)==="function"){
+			callback_all_h(this,argv);
+		}
+		if(this.readyState===4){
+			if((typeof callback)==="function"){
+				const s=this.status.toString();
+				if (s.length===3 && s.slice(0, 1)==='2'){
+					callback(this.response,this,argv);
+				}
+			}
+			if((typeof callback_state4_all_t)==="function"){
+				callback_state4_all_t(this,argv);
+			}
+		}
+		if((typeof callback_all_t)==="function"){
+			callback_all_t(this,argv);
+		}
+	}
+	;
+	xhttp.open(method, url, true);
+	xhttp.responseType=resType;
+	if(header) for(let i in header) xhttp.setRequestHeader(i,header[i]);
+	data=method === "GET" ? undefined : data;
+	argv.push(url,method,header,data,);
+	xhttp.send(data);
+	return xhttp;
+};
+
+
+const root=doc.ge('root');
+const pannelRoot=doc.ge('pannel-root');
+const dataRoot=doc.ge('data-root');
+const input_t=doc.ge('input-t');
+const btn_refresh=doc.ge('btn-refresh');
+
+
+const loadData=()=>{
+{ const arr=window.dataSrcs; if(arr){
+const callback_parseCsv=(info,resp)=>{
+	const text=resp.replace(/\r/g,'');
+	const result=[];
+	let row=[];
+	let field='';
+	let inQuotes=false;
+	
+	for(let i=0,sz=text.length;i<sz;++i){
+		const c=text[i];
+		const nextC=text[i + 1];
+		
+		if(inQuotes){
+			if(c==='"'){
+				// 處理逸出雙引號 (連續兩個雙引號 "" 代表一個雙引號字串)
+				if(nextC==='"'){
+					field+='"';
+					++i; // 跳過下一個雙引號
+				}else inQuotes=false;
+			}else field+=c;
+		}else{
+			if(c==='"') inQuotes=true;
+			else if(c===','){
+				// 逗號：結束當前欄位，並推入當前列
+				row.push(field);
+				field='';
+			}else if(c==='\n'){
+				// 換行：結束當前欄位與當前列
+				row.push(field);
+				result.push(row);
+				field='';
+				row=[];
+			}else field+=c;
+		}
+	}
+	
+	// 處理最後一列沒有以換行結尾的情況
+	if(field!==''||0<row.length){
+		row.push(field);
+		result.push(row);
+	}
+	
+	info.dataRows=result;
+};
+const callback_arrangeData=(info)=>{
+	const rtv=info.data=[];
+	const dataRows=info.dataRows;
+	const selIdxv=info.keys=[];
+	for(let x=0,arr=dataRows[0],xs=arr&&arr.length,s=new Set();x<xs;++x){
+		const idx=arr[x].lastIndexOf('-');
+		const key=idx>=0&&arr[x].match(/[0-9]+年$/)?arr[x].slice(0,idx):arr[x];
+		if(s.has(key)) continue;
+		s.add(key);
+		selIdxv.push([arr[x],key,x,]);
+	}
+	for(let ri=1,rsz=dataRows.length,xs=selIdxv.length;ri<rsz;++ri){
+		const row=dataRows[ri];
+		const info={};
+		for(let x=0;x<xs;++x) info[selIdxv[x][1]]=row[selIdxv[x][2]];
+		rtv.push(info);
+	}
+};
+let cnt=arr.length||0; if(!cnt) renderAllData();
+const callback=function(info_bind,resp,xhr,xhr_argv){
+	info_bind=info_bind||{};
+	const info=info_bind;
+	info.dataRaw=resp;
+	resp=resp||"";
+	
+	callback_parseCsv(info,resp.replace(/\r/g,''));
+	callback_arrangeData(info);
+	
+	if(!--cnt){
+		arrangeAllData();
+		const res=renderAllData();
+		input_t.value=res.t;
+	}
+};
+for(let x=cnt;x--;){
+	const info=arr[x];
+	jurl(arr[x].p,"GET",0,0,0,callback.bind(null,info));
+}
+} }
+};
+
+
+const dataKeys=[
+	"公司代號",
+	"公司名稱",
+	"產業類別",
+	"非擔任主管職務之全時員工資訊-員工薪資總額(仟元)",
+	"非擔任主管職務之全時員工資訊-員工人數-年度平均(人)",
+	"非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)",
+	"非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)",
+];
+const headerDisplayMapping={
+	"非擔任主管職務之全時員工資訊-員工薪資總額(仟元)":{
+		text:"非主管薪資總額(仟元)",
+		type:Number,
+	},
+	"非擔任主管職務之全時員工資訊-員工人數-年度平均(人)":{
+		text:"非主管人數平均(人)",
+		type:Number,
+	},
+	"非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)":{
+		text:"非主管薪資平均數(仟元/人)",
+		type:Number,
+	},
+	"非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)":{
+		text:"非主管薪資中位數(仟元/人)",
+		type:Number,
+	},
+};
+const masterKey="公司代號";
+const arrangeAllData=()=>{
+	const keys=dataKeys;
+	window.data=[];
+	const d={};
+	const arr=window.dataSrcs||[];
+	for(let x=0,xs=arr.length;x<xs;++x){
+		const info0=arr[x];
+		const data=info0.data;
+		for(let x=0,xs=data.length;x<xs;++x){
+			const info=data[x];
+			const mkey=info[masterKey];
+			let dst;
+			if(mkey in d) dst=d[mkey];
+			else{
+				window.data.push(d[mkey]=dst={});
+				dst[masterKey]=mkey;
+				dst._ts=[];
+			}
+			dst._ts.push(info0.t);
+			for(let ki=0,ksz=keys.length;ki<ksz;++ki){
+				if(keys[ki]===masterKey) continue;
+				;
+				{
+					if(!dst[keys[ki]]) dst[keys[ki]]={};
+					dst[keys[ki]][info0.t]=info[keys[ki]];
+				}
+			}
+		}
+	}
+};
+let lastBtn;
+const unsortedMark="—";
+const renderAllData_sortByCol_sort=(btn)=>{
+	const td=btn._td;
+	const o=td._ord;
+	const idx=td._idx;
+	const type=td._type;
+	const tbody=td._tbody;
+	const coef=(1-(o<<1));
+	let cmp3;
+	if(type===Number){ cmp3=(a,b)=>{
+		const valA=a._vals[idx]-0;
+		const valB=b._vals[idx]-0;
+		if(isNaN(valA)) return isNaN(valB)?0:1;
+		if(isNaN(valB)) return -1;
+		return coef*(valA-valB);
+	}; }
+	const trs=[...tbody.childNodes]; if(cmp3) trs.sort(cmp3);
+	tbody.rf(0);
+	for(let x=0,xs=trs.length;x<xs;++x) tbody.ac(trs[x]);
+	btn._ord.rf(0).atxt(o?"↓":"↑");
+	
+};
+const renderAllData_sortByCol=function(e){
+	if(lastBtn){
+		lastBtn._ord.rf(0).atxt(unsortedMark);
+	}
+	lastBtn=this;
+	const td=this._td;
+	td._ord^=1;
+	renderAllData_sortByCol_sort(this);
+};
+const renderAllData_cmp3=(a,b)=>{
+	// TODO
+	return 0;
+};
+const renderAllData=window.renderAllData=(t)=>{
+	const root=dataRoot;
+	if(t==null) t=maxT;
+	t-=0;
+	
+	root.rf(0);
+	if(!root._tbl){
+		const d=doc;
+		const tbl=root._tbl=d.ce('table').sa('class','table-root');
+		tbl.
+		ac(
+			tbl._head=d.ce('thead').sa('class','table-header')
+		).
+		ac(
+			tbl._body=d.ce('tbody').sa('class','table-tbody')
+		).
+		ac;
+		const h=tbl._head;
+		h.ac(h._tr=d.ce('tr'));
+		h._tr._tds=[];
+		tbl._headers=[];
+		for(let arr=dataKeys,x=0,xs=arr.length;x<xs;++x){
+			tbl._headers.push(arr[x]);
+			const txt=(arr[x] in headerDisplayMapping)?headerDisplayMapping[arr[x]].text:arr[x];
+			const td=d.ce('td').ac(d.ce('div').atxt(txt));
+			td._idx=x;
+			td._key=arr[x];
+			td._type=(arr[x] in headerDisplayMapping)&&headerDisplayMapping[arr[x]].type;
+			td._tbody=tbl._body;
+			const btn=d.ce('button').atxt("sort ");
+			btn.ac(btn._ord=d.ce('div').atxt(unsortedMark));
+			btn._td=td;
+			btn.onclick=renderAllData_sortByCol;
+			td.ac(td._btn=btn);
+			h._tr.ac(td);
+			h._tr._tds.push(td);
+		}
+	}
+	const tbl=root._tbl;
+	root.ac(tbl);
+	
+	tbl._body.rf(0);
+	for(let i=0,arr=window.data.slice().sort(renderAllData_cmp3),sz=arr.length;i<sz;++i){
+		const tr=doc.ce('tr');
+		;
+		const vals=tr._vals=[];
+		for(let data=arr[i],x=0,xs=dataKeys.length;x<xs;++x){
+			const key=dataKeys[x];
+			const s=masterKey===key?data[key]:data[key][t];
+			tr.ac(doc.ce('td').atxt(s));
+			vals.push(s);
+		}
+		;
+		tbl._body.ac(tr);
+	}
+	if(lastBtn) renderAllData_sortByCol_sort(lastBtn);
+	
+	return ({
+		t:t,
+	});
+};
+
+
+loadData();
+btn_refresh.onclick=()=>{
+	renderAllData(input_t.value);
+};
+input_t.onwheel=(e)=>{
+	const dom=e.target;
+	if(e.deltaY){
+		const dValR=e.deltaY/Math.abs(e.deltaY);
+		dom.value-=dValR;
+		if(isNaN(dom.value)) dom.value=maxT;
+		e.preventDefault();
+		return;
+	}
+};
+
+
+})();
+</script>
+</body>
+</html>
