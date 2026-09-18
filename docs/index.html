@@ -232,6 +232,8 @@ const dataKeys=[
 	"非擔任主管職務之全時員工資訊-員工人數-年度平均(人)",
 	"非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)",
 	"非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)",
+	"平均數minus中位數",
+	"平均數minus中位數rate",
 ];
 const headerDisplayMapping={
 	"非擔任主管職務之全時員工資訊-員工薪資總額(仟元)":{
@@ -249,6 +251,24 @@ const headerDisplayMapping={
 	"非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)":{
 		text:"非主管薪資中位數(仟元/人)",
 		type:Number,
+	},
+	"平均數minus中位數":{
+		text:"平均數-中位數",
+		type:"derivation",
+		func:(info,t,dstK)=>{
+			const b=info["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"];
+			let rtv=(info["非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)"]-b);
+			return rtv;
+		},
+	},
+	"平均數minus中位數rate":{
+		text:"平均數-中位數 rate",
+		type:"derivation",
+		func:(info,t,dstK)=>{
+			const b=info["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"];
+			let rtv=(info["非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)"]-b)/b;
+			return rtv;
+		},
 	},
 };
 const masterKey="公司代號";
@@ -277,6 +297,12 @@ const arrangeAllData=()=>{
 				{
 					if(!dst[keys[ki]]) dst[keys[ki]]={};
 					dst[keys[ki]][info0.t]=info[keys[ki]];
+					const colInfo=headerDisplayMapping[keys[ki]];
+					if(colInfo){
+						if(headerDisplayMapping[keys[ki]].type==='derivation'){
+							dst[keys[ki]][info0.t]=headerDisplayMapping[keys[ki]].func(info,info0.t,dst[keys[ki]]);
+						}
+					}
 				}
 			}
 		}
