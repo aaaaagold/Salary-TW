@@ -59,6 +59,20 @@ const maxT=(()=>{
 	for(let x=1,xs=arr.length;x<xs;++x) t=Math.max(t,arr[x].t);
 	return t;
 })();
+const precisionLog10=6;
+const precisionVal=Math.pow(10,precisionLog10);
+const precisionAligning=n=>{
+	const n0=n;
+	if(isNaN(n)) return n0;
+	n-=0;
+	if(isNaN(n/Infinity)) return n0;
+	n=parseInt(n*precisionVal)/precisionVal;
+	n+="";
+	const e=n.indexOf('.')+1;
+	if(e) n=n.padEnd(e+precisionLog10,'0');
+	else n+='.'+'0'.repeat(precisionLog10);
+	return n;
+};
 </script>
 </head>
 <body>
@@ -229,8 +243,11 @@ const dataKeys=[
 	"公司名稱",
 	"產業類別",
 	"非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)",
-	"非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)",
+	"中位數增rate1",
+	"中位數增rate2",
+	"中位數增rate3",
 	"非擔任主管職務之全時員工資訊-員工人數-年度平均(人)",
+	"非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)",
 	"非擔任主管職務之全時員工資訊-員工薪資總額(仟元)",
 	"平均數minus中位數",
 	"平均數minus中位數rate",
@@ -245,15 +262,15 @@ const headerDisplayMapping={
 		type:Number,
 	},
 	"非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)":{
-		text:"非主管薪資平均數(仟元/人)",
+		text:"非主管平均數(仟元/人)",
 		type:Number,
 	},
 	"非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)":{
-		text:"非主管薪資中位數(仟元/人)",
+		text:"非主管中位數(仟元/人)",
 		type:Number,
 	},
 	"平均數minus中位數":{
-		text:"平均數-中位數",
+		text:"(平均數-中位數)",
 		type:"derivation",
 		func:(info,t,dstK)=>{
 			const b=info["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"];
@@ -262,11 +279,46 @@ const headerDisplayMapping={
 		},
 	},
 	"平均數minus中位數rate":{
-		text:"平均數-中位數 rate",
+		text:"(平均數-中位數)/中位數",
 		type:"derivation",
 		func:(info,t,dstK)=>{
 			const b=info["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"];
 			let rtv=(info["非擔任主管職務之全時員工資訊-員工薪資-平均數(仟元/人)"]-b)/b;
+			rtv=precisionAligning(rtv);
+			rtv=(isNaN(rtv)?undefined:rtv);
+			return rtv;
+		},
+	},
+	"中位數增rate1":{
+		text:"中位數/前1年",
+		type:"after-derivation-1",
+		func:(info,t,dstK,dst)=>{
+			const b=dst["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"][t-1];
+			const n=info["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"];
+			let rtv=precisionAligning(n/b);
+			rtv=(isNaN(rtv)?undefined:rtv);
+			return rtv;
+		},
+	},
+	"中位數增rate2":{
+		text:"中位數/前2年",
+		type:"after-derivation-1",
+		func:(info,t,dstK,dst)=>{
+			const b=dst["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"][t-2];
+			const n=info["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"];
+			let rtv=precisionAligning(n/b);
+			rtv=(isNaN(rtv)?undefined:rtv);
+			return rtv;
+		},
+	},
+	"中位數增rate3":{
+		text:"中位數/前3年",
+		type:"after-derivation-1",
+		func:(info,t,dstK,dst)=>{
+			const b=dst["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"][t-3];
+			const n=info["非擔任主管職務之全時員工資訊-員工薪資-中位數(仟元/人)"];
+			let rtv=precisionAligning(n/b);
+			rtv=(isNaN(rtv)?undefined:rtv);
 			return rtv;
 		},
 	},
@@ -301,6 +353,27 @@ const arrangeAllData=()=>{
 					if(colInfo){
 						if(headerDisplayMapping[keys[ki]].type==='derivation'){
 							dst[keys[ki]][info0.t]=headerDisplayMapping[keys[ki]].func(info,info0.t,dst[keys[ki]]);
+						}
+					}
+				}
+			}
+		}
+	}
+	for(let x=0,xs=arr.length;x<xs;++x){
+		const info0=arr[x];
+		const data=info0.data;
+		for(let x=0,xs=data.length;x<xs;++x){
+			const info=data[x];
+			const mkey=info[masterKey];
+			const dst=d[mkey];
+			for(let ki=0,ksz=keys.length;ki<ksz;++ki){
+				if(keys[ki]===masterKey) continue;
+				;
+				{
+					const colInfo=headerDisplayMapping[keys[ki]];
+					if(colInfo){
+						if(headerDisplayMapping[keys[ki]].type==='after-derivation-1'){
+							dst[keys[ki]][info0.t]=headerDisplayMapping[keys[ki]].func(info,info0.t,dst[keys[ki]],dst);
 						}
 					}
 				}
