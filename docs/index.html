@@ -32,6 +32,9 @@
 .table-tbody td {
  text-align:right;
 }
+.selected {
+ background-color:rgba(0,234,0,0.5);
+}
 </style>
 <script>
 "use strict";
@@ -425,6 +428,10 @@ const renderAllData_cmp3=(a,b)=>{
 	// TODO
 	return 0;
 };
+const renderAllData_userClickRow=function(e){
+	if(this._selected^=1) this.classList.add('selected');
+	else this.classList.remove('selected');
+};
 const renderAllData=window.renderAllData=(t)=>{
 	const root=dataRoot;
 	if(t==null) t=maxT;
@@ -472,6 +479,7 @@ const renderAllData=window.renderAllData=(t)=>{
 	tbl._body.rf(0);
 	for(let i=0,arr=window.data.slice().sort(renderAllData_cmp3),sz=arr.length;i<sz;++i){
 		const tr=doc.ce('tr');
+		tr.onclick=renderAllData_userClickRow;
 		;
 		tr.ac(doc.ce('td').ac(tr._ord=doc.ce('div').atxt(i)));
 		const vals=tr._vals=[];
