@@ -477,10 +477,13 @@ const renderAllData=window.renderAllData=(t)=>{
 	root.ac(tbl);
 	
 	tbl._body.rf(0);
+	if(!tbl._body._tbl) tbl._body._tbl={};
 	for(let i=0,arr=window.data.slice().sort(renderAllData_cmp3),sz=arr.length;i<sz;++i){
-		const tr=doc.ce('tr');
+		const mKey=arr[i][masterKey];
+		const tr=tbl._body._tbl[mKey]=(tbl._body._tbl[mKey]||doc.ce('tr'));
 		tr.onclick=renderAllData_userClickRow;
 		;
+		tr.rf(0);
 		tr.ac(doc.ce('td').ac(tr._ord=doc.ce('div').atxt(i)));
 		const vals=tr._vals=[];
 		for(let data=arr[i],x=0,xs=dataKeys.length;x<xs;++x){
