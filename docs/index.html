@@ -292,6 +292,7 @@ const headerDisplayMapping={
 			return rtv;
 		},
 	},
+	
 	"中位數增rate1":{
 		text:"中位數/前1年",
 		type:"after-derivation-1",
@@ -323,6 +324,19 @@ const headerDisplayMapping={
 			let rtv=precisionAligning(n/b);
 			rtv=(isNaN(rtv)?undefined:rtv);
 			return rtv;
+		},
+	},
+	
+	"累計人數":{
+		text:"累計人數",
+		type:"after-sorted-1",
+		func:(cIdx,tr,idx,arr_trs,)=>{
+			const lastTr=arr_trs[idx-1];
+			const lastTd=lastTr&&lastTr._累計人數;
+			const lastVal=lastTd&&lastTd._val-0||0;
+			const currTd=tr._累計人數; if(!currTd) return;
+			const s=currTd._val=tr._key2val["非擔任主管職務之全時員工資訊-員工人數-年度平均(人)"]-0+lastVal;
+			currTd.rf(0).atxt(s);
 		},
 	},
 };
@@ -384,6 +398,20 @@ const arrangeAllData=()=>{
 		}
 	}
 };
+const renderAllData_afterSorted=(tbody)=>{
+	const p=tbody.parentNode;
+	const headers=p&&p._headers; if(!headers) return;
+	const arr=tbody.childNodes;
+	
+	for(let tdi=0,sz=headers.length;tdi<sz;++tdi){
+		const mapping=headerDisplayMapping[headers[tdi]];
+		if(mapping&&mapping.type==='after-sorted-1'){
+			for(let x=0,xs=arr.length;x<xs;++x){
+				mapping.func(tdi,arr[x],x,arr,);
+			}
+		}
+	}
+};
 let lastBtn;
 const unsortedMark="—";
 const renderAllData_sortByCol_sort=(btn)=>{
@@ -414,6 +442,7 @@ const renderAllData_sortByCol_sort=(btn)=>{
 		trs[x]._ord.rf(0).atxt(x);
 	}
 	btn._ord.rf(0).atxt(o?"↓":"↑");
+	renderAllData_afterSorted(tbody);
 };
 const renderAllData_sortByCol=function(e){
 	if(lastBtn){
@@ -472,6 +501,7 @@ const renderAllData=window.renderAllData=(t)=>{
 			h._tr.ac(td);
 			h._tr._tds.push(td);
 		}
+		tbl._headers.push("累計人數"); h._tr.ac(d.ce('td').ac(d.ce('div').atxt('累計人數')));
 	}
 	const tbl=root._tbl;
 	root.ac(tbl);
@@ -485,17 +515,21 @@ const renderAllData=window.renderAllData=(t)=>{
 		;
 		tr.rf(0);
 		tr.ac(doc.ce('td').ac(tr._ord=doc.ce('div').atxt(i)));
-		const vals=tr._vals=[];
+		const vals=tr._vals=tr._vals||[];
+		const key2val=tr._key2val=tr._key2val||{};
 		for(let data=arr[i],x=0,xs=dataKeys.length;x<xs;++x){
 			const key=dataKeys[x];
 			const s=masterKey===key?data[key]:data[key][t];
 			tr.ac(doc.ce('td').atxt(s));
-			vals.push(s);
+			vals[x]=s;
+			key2val[key]=s;
 		}
+		tr.ac(doc.ce('td').ac(tr._累計人數=doc.ce('div').atxt(0))); tr._累計人數._val=0;
 		;
 		tbl._body.ac(tr);
 	}
 	if(lastBtn) renderAllData_sortByCol_sort(lastBtn);
+	else renderAllData_afterSorted(tbl._body);
 	
 	return ({
 		t:t,
